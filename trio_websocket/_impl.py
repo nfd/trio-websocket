@@ -1546,6 +1546,7 @@ class WebSocketConnection(trio.abc.AsyncResource):
                 await self._send(self._initial_request)
             except ConnectionClosed:
                 self._reader_running = False
+                raise
 
         async with self._send_channel:
             while self._reader_running:
@@ -1608,10 +1609,10 @@ class WebSocketConnection(trio.abc.AsyncResource):
             logger.debug('%s sending %d bytes', self, len(data))
             try:
                 await self._stream.send_all(data)
-            except (trio.BrokenResourceError, trio.ClosedResourceError):
+            except (trio.BrokenResourceError, trio.ClosedResourceError) as exc:
                 await self._abort_web_socket()
                 assert self._close_reason is not None
-                raise ConnectionClosed(self._close_reason) from None
+                raise ConnectionClosed(self._close_reason) from exc
 
 
 class Endpoint:
